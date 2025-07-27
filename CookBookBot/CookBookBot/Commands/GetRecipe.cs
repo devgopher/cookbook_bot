@@ -1,6 +1,6 @@
 ﻿using Botticelli.Framework.Commands;
 
-namespace CookBookBot.Commands.Processors;
+namespace CookBookBot.Commands;
 
 /// <summary>
 /// Gets a recipe by id
