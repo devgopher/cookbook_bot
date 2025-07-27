@@ -1,6 +1,6 @@
-﻿namespace CookBookBot.Entities;
+﻿namespace CookBookBot.Dal.Entities;
 
-public class Ingredient2recipe
+public class Ingredient2Recipe
 {
     public Guid IngredientId { get; set; }
 

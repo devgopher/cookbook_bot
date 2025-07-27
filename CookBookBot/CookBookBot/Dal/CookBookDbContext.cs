@@ -1,7 +1,7 @@
-﻿using CookBookBot.Entities;
+﻿using CookBookBot.Dal.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace CookBookBot;
+namespace CookBookBot.Dal;
 
 public partial class CookBookDbContext : DbContext
 {
@@ -18,7 +18,7 @@ public partial class CookBookDbContext : DbContext
 
     public virtual DbSet<Ingredient> Ingredients { get; set; }
 
-    public virtual DbSet<Ingredient2recipe> Ingredient2recipes { get; set; }
+    public virtual DbSet<Ingredient2Recipe> Ingredient2recipes { get; set; }
 
     public virtual DbSet<RecipesDataset> RecipesDatasets { get; set; }
 
@@ -64,7 +64,7 @@ public partial class CookBookDbContext : DbContext
                 .HasColumnName("name");
         });
 
-        modelBuilder.Entity<Ingredient2recipe>(entity =>
+        modelBuilder.Entity<Ingredient2Recipe>(entity =>
         {
             entity.HasKey(e => new { e.IngredientId, e.RecipeId }).HasName("ingredient2recipe_pk");
 

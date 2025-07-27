@@ -39,7 +39,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Dal\"/>
+        <Folder Include="Layouts\" />
     </ItemGroup>
 
 </Project>

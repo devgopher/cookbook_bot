@@ -1,4 +1,4 @@
-﻿namespace CookBookBot.Entities;
+﻿namespace CookBookBot.Dal.Entities;
 
 public class RecipesDataset
 {
