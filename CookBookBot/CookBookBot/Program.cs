@@ -30,4 +30,9 @@ builder.Services.AddBotCommand<StopCommand>()
        .AddProcessor<StopCommandProcessor<ReplyKeyboardMarkup>>()
        .AddValidator<PassValidator<StopCommand>>();
 
+builder.Services.AddBotChainProcessedCommand<FindRecipeCommand, PassValidator<FindRecipeCommand>>()
+       .AddNext<FindRecipeCommandProcessor<ReplyKeyboardMarkup>>()
+       .AddNext<GetRecipeCommandProcessor<ReplyKeyboardMarkup>>();
+
+
 await builder.Build().RunAsync();
