@@ -1,0 +1,19 @@
+{
+  "Name": "MainLayout",
+  "Layout": [
+    [
+      {
+        "Button": {
+          "Content": "/FindRecipe \uD83C\uDFC6"
+        }
+      }
+    ],
+    [
+      {
+        "Button": {
+          "Content": "/Info \uD83D\uDDE8\uFE0F"
+        }
+      }
+    ]
+  ]
+}

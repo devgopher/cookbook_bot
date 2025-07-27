@@ -1,51 +1,17 @@
-﻿using System.Reflection;
-using Botticelli.Client.Analytics;
-using Botticelli.Controls.Parsers;
+﻿using Botticelli.Client.Analytics;
 using Botticelli.Framework.Commands.Processors;
 using Botticelli.Framework.Commands.Validators;
-using Botticelli.Framework.SendOptions;
-using Botticelli.Shared.API.Client.Requests;
 using Botticelli.Shared.ValueObjects;
 using FluentValidation;
 
 namespace CookBookBot.Commands.Processors;
 
-public class FindRecipeCommandProcessor<TReplyMarkup> : CommandProcessor<InfoCommand>, ICommandChainProcessor<FindRecipeCommand> where TReplyMarkup : class
+public class FindRecipeCommandProcessor : WaitForClientResponseCommandChainProcessor<FindRecipeCommand>
 {
-    private readonly SendOptionsBuilder<TReplyMarkup>? _options;
-
-    public FindRecipeCommandProcessor(ILogger<FindRecipeCommandProcessor<TReplyMarkup>> logger,
-                                ICommandValidator<InfoCommand> commandValidator,
-                                ILayoutSupplier<TReplyMarkup> layoutSupplier,
-                                ILayoutParser layoutParser,
-                                IValidator<Message> messageValidator)
-            : base(logger,
-                   commandValidator,
-                   messageValidator)
+    public FindRecipeCommandProcessor(ILogger<CommandChainProcessor<FindRecipeCommand>> logger,
+        ICommandValidator<FindRecipeCommand> commandValidator, MetricsProcessor metricsProcessor,
+        IValidator<Message> messageValidator) : base(logger, commandValidator, metricsProcessor, messageValidator)
     {
-        var location = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-        var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "main_layout.json"));
-        var responseMarkup = layoutSupplier.GetMarkup(responseLayout);
-
-        _options = SendOptionsBuilder<TReplyMarkup>.CreateBuilder(responseMarkup);
-    }
-
-    public FindRecipeCommandProcessor(ILogger<FindRecipeCommandProcessor<TReplyMarkup>> logger,
-                                ICommandValidator<InfoCommand> commandValidator,
-                                ILayoutSupplier<TReplyMarkup> layoutSupplier,
-                                ILayoutParser layoutParser,
-                                IValidator<Message> messageValidator,
-                                MetricsProcessor? metricsProcessor)
-            : base(logger,
-                   commandValidator,
-                   messageValidator,
-                   metricsProcessor)
-    {
-        var location = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-        var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "main_layout.json"));
-        var responseMarkup = layoutSupplier.GetMarkup(responseLayout);
-
-        _options = SendOptionsBuilder<TReplyMarkup>.CreateBuilder(responseMarkup);
     }
 
     protected override Task InnerProcessContact(Message message, CancellationToken token)
@@ -65,19 +31,14 @@ public class FindRecipeCommandProcessor<TReplyMarkup> : CommandProcessor<InfoCom
 
     protected override async Task InnerProcess(Message message, CancellationToken token)
     {
-        var messageRequest = new SendMessageRequest
+        var responseMessage = new Message
         {
-            Message = new Message
-            {
-                Uid = Guid.NewGuid().ToString(),
-                ChatIds = message.ChatIds,
-                Body = "This is a test bot.\nEnjoy!"
-            }
+            ChatIdInnerIdLinks = message.ChatIdInnerIdLinks,
+            ChatIds = message.ChatIds,
+            Subject = string.Empty,
+            Body = "Enter ingredients (for example: \"egg garlic\")"
         };
 
-        await SendMessage(messageRequest, _options, token);
+        await SendMessage(responseMessage, token);
     }
-
-    public HashSet<Guid> ChainIds { get; }
-    public ICommandChainProcessor Next { get; set; }
 }

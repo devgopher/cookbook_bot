@@ -24,7 +24,7 @@ public class InfoCommandProcessor<TReplyMarkup> : CommandProcessor<InfoCommand> 
                    messageValidator)
     {
         var location = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-        var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "main_layout.json"));
+        var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "start_layout.json"));
         var responseMarkup = layoutSupplier.GetMarkup(responseLayout);
 
         _options = SendOptionsBuilder<TReplyMarkup>.CreateBuilder(responseMarkup);
@@ -42,7 +42,7 @@ public class InfoCommandProcessor<TReplyMarkup> : CommandProcessor<InfoCommand> 
                    metricsProcessor)
     {
         var location = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-        var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "main_layout.json"));
+        var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "start_layout.json"));
         var responseMarkup = layoutSupplier.GetMarkup(responseLayout);
 
         _options = SendOptionsBuilder<TReplyMarkup>.CreateBuilder(responseMarkup);

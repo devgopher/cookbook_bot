@@ -1,5 +1,8 @@
-﻿using Botticelli.Framework.Commands.Validators;
+﻿using Botticelli.Client.Analytics.Extensions;
+using Botticelli.Controls.Parsers;
+using Botticelli.Framework.Commands.Validators;
 using Botticelli.Framework.Extensions;
+using Botticelli.Framework.Telegram;
 using Botticelli.Framework.Telegram.Extensions;
 using Botticelli.Interfaces;
 using CookBookBot.Commands;
@@ -12,11 +15,21 @@ var builder = WebApplication.CreateBuilder(args);
 var bot = builder.Services
        .AddTelegramBot(builder.Configuration)
        .Build();
-        
+
 builder.Services
        .AddTelegramLayoutsSupport()
        .AddLogging(cfg => cfg.AddNLog())
-       .AddSingleton<IBot>(bot);
+       .AddSingleton<IBot>(bot)
+       .AddSingleton<ILayoutParser, JsonLayoutParser>()
+       .AddSingleton<GetRecipeCommandProcessor>()
+       .AddSingleton<FindRecipeCommandProcessor>()
+       .AddSingleton<StartCommandProcessor<ReplyKeyboardMarkup>>()
+       .AddSingleton<StopCommandProcessor<ReplyKeyboardMarkup>>()
+       .AddSingleton<InfoCommandProcessor<ReplyKeyboardMarkup>>()
+       .AddScoped<ICommandValidator<InfoCommand>, PassValidator<InfoCommand>>()
+       .AddScoped<ICommandValidator<StartCommand>, PassValidator<StartCommand>>()
+       .AddScoped<ICommandValidator<StopCommand>, PassValidator<StopCommand>>()
+       .AddScoped<ICommandValidator<FindRecipeCommand>, PassValidator<FindRecipeCommand>>();
 
 builder.Services.AddBotCommand<InfoCommand>()
        .AddProcessor<InfoCommandProcessor<ReplyKeyboardMarkup>>()
@@ -31,8 +44,10 @@ builder.Services.AddBotCommand<StopCommand>()
        .AddValidator<PassValidator<StopCommand>>();
 
 builder.Services.AddBotChainProcessedCommand<FindRecipeCommand, PassValidator<FindRecipeCommand>>()
-       .AddNext<FindRecipeCommandProcessor<ReplyKeyboardMarkup>>()
-       .AddNext<GetRecipeCommandProcessor<ReplyKeyboardMarkup>>();
+       .AddNext<FindRecipeCommandProcessor>()
+       .AddNext<GetRecipeCommandProcessor>();
 
+var app = builder.Build();
+app.Services.RegisterBotChainedCommand<FindRecipeCommand, TelegramBot>();
 
-await builder.Build().RunAsync();
+await app.RunAsync();

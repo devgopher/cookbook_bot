@@ -1,83 +1,58 @@
-﻿using System.Reflection;
-using Botticelli.Client.Analytics;
-using Botticelli.Controls.Parsers;
+﻿using Botticelli.Client.Analytics;
 using Botticelli.Framework.Commands.Processors;
 using Botticelli.Framework.Commands.Validators;
-using Botticelli.Framework.SendOptions;
-using Botticelli.Shared.API.Client.Requests;
 using Botticelli.Shared.ValueObjects;
+using CookBookBot.Dal;
 using FluentValidation;
 
 namespace CookBookBot.Commands.Processors;
 
-public class GetRecipeCommandProcessor<TReplyMarkup> : CommandProcessor<InfoCommand>, ICommandChainProcessor<FindRecipeCommand> where TReplyMarkup : class
+public class GetRecipeCommandProcessor : CommandChainProcessor<FindRecipeCommand>
 {
-    private readonly SendOptionsBuilder<TReplyMarkup>? _options;
+    private readonly CookBookDbContext _context;
 
-    public GetRecipeCommandProcessor(ILogger<GetRecipeCommandProcessor<TReplyMarkup>> logger,
-                                ICommandValidator<InfoCommand> commandValidator,
-                                ILayoutSupplier<TReplyMarkup> layoutSupplier,
-                                ILayoutParser layoutParser,
-                                IValidator<Message> messageValidator)
-            : base(logger,
-                   commandValidator,
-                   messageValidator)
+    public GetRecipeCommandProcessor(ILogger<CommandChainProcessor<FindRecipeCommand>> logger,
+        ICommandValidator<FindRecipeCommand> commandValidator,
+        MetricsProcessor metricsProcessor,
+        IValidator<Message> messageValidator) : base(logger,
+        commandValidator,
+        metricsProcessor,
+        messageValidator)
     {
-        var location = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-        var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "main_layout.json"));
-        var responseMarkup = layoutSupplier.GetMarkup(responseLayout);
-
-        _options = SendOptionsBuilder<TReplyMarkup>.CreateBuilder(responseMarkup);
     }
 
-    public GetRecipeCommandProcessor(ILogger<GetRecipeCommandProcessor<TReplyMarkup>> logger,
-                                ICommandValidator<InfoCommand> commandValidator,
-                                ILayoutSupplier<TReplyMarkup> layoutSupplier,
-                                ILayoutParser layoutParser,
-                                IValidator<Message> messageValidator,
-                                MetricsProcessor? metricsProcessor)
-            : base(logger,
-                   commandValidator,
-                   messageValidator,
-                   metricsProcessor)
+    public override async Task ProcessAsync(Message message, CancellationToken token)
     {
-        var location = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-        var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "main_layout.json"));
-        var responseMarkup = layoutSupplier.GetMarkup(responseLayout);
+        if (message.ProcessingArgs == null || !message.ProcessingArgs.Any())
+            return;
 
-        _options = SendOptionsBuilder<TReplyMarkup>.CreateBuilder(responseMarkup);
-    }
+        var ingredients = message.ProcessingArgs[0].Split(" ").Select(i => i.ToLowerInvariant());
 
-    protected override Task InnerProcessContact(Message message, CancellationToken token)
-    {
-        return Task.CompletedTask;
-    }
+        var ingredientIds = _context.Ingredients.Where(i => ingredients.Contains(i.Name)).Select(i => i.Id);
 
-    protected override Task InnerProcessPoll(Message message, CancellationToken token)
-    {
-        return Task.CompletedTask;
-    }
+        var recipeIds = _context.Ingredient2recipes.Where(i2R => ingredientIds.Contains(i2R.IngredientId))
+            .Select(l => l.RecipeId).Distinct();
 
-    protected override Task InnerProcessLocation(Message message, CancellationToken token)
-    {
-        return Task.CompletedTask;
-    }
+        var recipes = _context.RecipesDatasets.Where(r => recipeIds.Contains(r.Id));
 
-    protected override async Task InnerProcess(Message message, CancellationToken token)
-    {
-        var messageRequest = new SendMessageRequest
+        message.ProcessingArgs = [];
+
+        message.Body = "See results: \n";
+
+        foreach (var recipe in recipes.OrderBy(o => Random.Shared.Next()).Take(3))
         {
-            Message = new Message
-            {
-                Uid = Guid.NewGuid().ToString(),
-                ChatIds = message.ChatIds,
-                Body = "This is a test bot.\nEnjoy!"
-            }
-        };
-
-        await SendMessage(messageRequest, _options, token);
+            message.Body += $"\\U00002714\\U00002714 {recipe.Title} \\U00002714\\U00002714\n";
+            message.Body += "\nIngredients: \n";
+            message.Body += recipe.Ingredients?.Replace("[", string.Empty).Replace("]", string.Empty)
+                .Replace("\"", string.Empty).Split(",").Select(i => $"\\U2705 {i};");
+            message.Body += "\nSteps: \n";
+            message.Body += recipe.Directions?.Replace("[", string.Empty).Replace("]", string.Empty)
+                .Replace("\"", string.Empty).Split(",").Select(d => $"\\U2705  {d};\n");
+            message.Body += $"\n{recipe.Link}\n\n";
+        }
+        
+        await SendMessage(message, token);
     }
 
-    public HashSet<Guid> ChainIds { get; }
-    public ICommandChainProcessor Next { get; set; }
+    protected override Task InnerProcess(Message message, CancellationToken token) => Task.FromResult(Task.CompletedTask);
 }
