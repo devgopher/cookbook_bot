@@ -1,4 +1,5 @@
-﻿using Botticelli.Client.Analytics;
+﻿using System.Text;
+using Botticelli.Client.Analytics;
 using Botticelli.Framework.Commands.Processors;
 using Botticelli.Framework.Commands.Validators;
 using Botticelli.Shared.ValueObjects;
@@ -14,11 +15,12 @@ public class GetRecipeCommandProcessor : CommandChainProcessor<FindRecipeCommand
     public GetRecipeCommandProcessor(ILogger<CommandChainProcessor<FindRecipeCommand>> logger,
         ICommandValidator<FindRecipeCommand> commandValidator,
         MetricsProcessor metricsProcessor,
-        IValidator<Message> messageValidator) : base(logger,
+        IValidator<Message> messageValidator, CookBookDbContext context) : base(logger,
         commandValidator,
         metricsProcessor,
         messageValidator)
     {
+        _context = context;
     }
 
     public override async Task ProcessAsync(Message message, CancellationToken token)
@@ -28,7 +30,7 @@ public class GetRecipeCommandProcessor : CommandChainProcessor<FindRecipeCommand
 
         var ingredients = message.ProcessingArgs[0].Split(" ").Select(i => i.ToLowerInvariant());
 
-        var ingredientIds = _context.Ingredients.Where(i => ingredients.Contains(i.Name)).Select(i => i.Id);
+        var ingredientIds = _context.Ingredients.Where(i => ingredients.Contains(i.Name)).Select(i => i.Id).ToArray();
 
         var recipeIds = _context.Ingredient2Recipes.Where(i2R => ingredientIds.Contains(i2R.IngredientId))
             .Select(l => l.RecipeId).Distinct();
@@ -37,21 +39,28 @@ public class GetRecipeCommandProcessor : CommandChainProcessor<FindRecipeCommand
 
         message.ProcessingArgs = [];
 
-        message.Body = "See results: \n";
-
-        foreach (var recipe in recipes.OrderBy(o => Random.Shared.Next()).Take(3))
+        if (!recipes.Any())
         {
-            message.Body += $"\\U00002714\\U00002714 {recipe.Title} \\U00002714\\U00002714\n";
-            message.Body += "\nIngredients: \n";
-            message.Body += recipe.Ingredients?.Replace("[", string.Empty).Replace("]", string.Empty)
-                .Replace("\"", string.Empty).Split(",").Select(i => $"\\U2705 {i};");
-            message.Body += "\nSteps: \n";
-            message.Body += recipe.Directions?.Replace("[", string.Empty).Replace("]", string.Empty)
-                .Replace("\"", string.Empty).Split(",").Select(d => $"\\U2705  {d};\n");
-            message.Body += $"\n{recipe.Link}\n\n";
+            message.Body = "🚫 No recipes were found!";
+            
+            await SendMessage(message, token);
         }
         
-        await SendMessage(message, token);
+        foreach (var recipe in recipes.AsEnumerable().OrderBy(o => Random.Shared.Next()).Take(3))
+        {
+            var sb = new StringBuilder();
+            sb.Append($"\u2714\u2714 {recipe.Title} \u2714\u2714\n");
+            sb.Append("\nIngredients: \n");
+            sb.AppendJoin('\n', recipe.Ingredients?.Replace("[", string.Empty).Replace("]", string.Empty)
+                .Replace("\"", string.Empty).Split(",").Select(i => $"\u2705 {i};")!);
+            sb.Append("\nSteps: \n");
+            sb.AppendJoin('\n', recipe.Directions?.Replace("[", string.Empty).Replace("]", string.Empty)
+                .Replace("\"", string.Empty).Split(",").Select(d => $"\u2705  {d};")!);
+            sb.Append($"\n{recipe.Link}\n\n");
+            message.Body = sb.ToString();
+        
+            await SendMessage(message, token);
+        }
     }
 
     protected override Task InnerProcess(Message message, CancellationToken token) => Task.FromResult(Task.CompletedTask);

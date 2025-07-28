@@ -4,9 +4,11 @@ using Botticelli.Framework.Commands.Validators;
 using Botticelli.Framework.Extensions;
 using Botticelli.Framework.Telegram;
 using Botticelli.Framework.Telegram.Extensions;
-using Botticelli.Interfaces;
 using CookBookBot.Commands;
 using CookBookBot.Commands.Processors;
+using CookBookBot.Dal;
+using CookBookBot.Settings;
+using Microsoft.EntityFrameworkCore;
 using NLog.Extensions.Logging;
 using Telegram.Bot.Types.ReplyMarkups;
 
@@ -27,6 +29,12 @@ builder.Services
        .AddScoped<ICommandValidator<StartCommand>, PassValidator<StartCommand>>()
        .AddScoped<ICommandValidator<StopCommand>, PassValidator<StopCommand>>()
        .AddScoped<ICommandValidator<FindRecipeCommand>, PassValidator<FindRecipeCommand>>();
+
+var connection = builder.Configuration.GetSection(CookBookSettings.Section).Get<CookBookSettings>()?.DbConnection;
+
+builder.Services.AddDbContext<CookBookDbContext>(opt =>
+       opt.UseNpgsql(connection)
+              .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking), ServiceLifetime.Singleton);
 
 builder.Services.AddBotCommand<InfoCommand>()
        .AddProcessor<InfoCommandProcessor<ReplyKeyboardMarkup>>()

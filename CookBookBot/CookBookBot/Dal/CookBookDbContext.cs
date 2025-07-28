@@ -5,10 +5,6 @@ namespace CookBookBot.Dal;
 
 public partial class CookBookDbContext : DbContext
 {
-    public CookBookDbContext()
-    {
-    }
-
     public CookBookDbContext(DbContextOptions<CookBookDbContext> options)
         : base(options)
     {
@@ -21,9 +17,6 @@ public partial class CookBookDbContext : DbContext
     public virtual DbSet<Ingredient2Recipe> Ingredient2Recipes { get; set; }
 
     public virtual DbSet<RecipesDataset> RecipesDatasets { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql("<secret>");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
