@@ -18,7 +18,7 @@ public partial class CookBookDbContext : DbContext
 
     public virtual DbSet<Ingredient> Ingredients { get; set; }
 
-    public virtual DbSet<Ingredient2Recipe> Ingredient2recipes { get; set; }
+    public virtual DbSet<Ingredient2Recipe> Ingredient2Recipes { get; set; }
 
     public virtual DbSet<RecipesDataset> RecipesDatasets { get; set; }
 

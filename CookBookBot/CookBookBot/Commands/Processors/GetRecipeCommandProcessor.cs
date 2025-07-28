@@ -30,7 +30,7 @@ public class GetRecipeCommandProcessor : CommandChainProcessor<FindRecipeCommand
 
         var ingredientIds = _context.Ingredients.Where(i => ingredients.Contains(i.Name)).Select(i => i.Id);
 
-        var recipeIds = _context.Ingredient2recipes.Where(i2R => ingredientIds.Contains(i2R.IngredientId))
+        var recipeIds = _context.Ingredient2Recipes.Where(i2R => ingredientIds.Contains(i2R.IngredientId))
             .Select(l => l.RecipeId).Distinct();
 
         var recipes = _context.RecipesDatasets.Where(r => recipeIds.Contains(r.Id));

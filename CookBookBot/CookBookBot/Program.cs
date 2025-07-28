@@ -14,15 +14,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 var bot = builder.Services
        .AddTelegramBot(builder.Configuration)
-       .Build();
+       .Prepare();
 
 builder.Services
        .AddTelegramLayoutsSupport()
        .AddLogging(cfg => cfg.AddNLog())
-       .AddSingleton<IBot>(bot)
        .AddSingleton<ILayoutParser, JsonLayoutParser>()
-       .AddSingleton<GetRecipeCommandProcessor>()
-       .AddSingleton<FindRecipeCommandProcessor>()
        .AddSingleton<StartCommandProcessor<ReplyKeyboardMarkup>>()
        .AddSingleton<StopCommandProcessor<ReplyKeyboardMarkup>>()
        .AddSingleton<InfoCommandProcessor<ReplyKeyboardMarkup>>()
@@ -48,6 +45,7 @@ builder.Services.AddBotChainProcessedCommand<FindRecipeCommand, PassValidator<Fi
        .AddNext<GetRecipeCommandProcessor>();
 
 var app = builder.Build();
-app.Services.RegisterBotChainedCommand<FindRecipeCommand, TelegramBot>();
+app.Services.RegisterBotChainedCommand<FindRecipeCommand, TelegramBot>()
+       .UseTelegramBot();
 
 await app.RunAsync();
