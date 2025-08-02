@@ -30,12 +30,19 @@ public class GetRecipeCommandProcessor : CommandChainProcessor<FindRecipeCommand
 
         var ingredients = message.ProcessingArgs[0].Split(" ").Select(i => i.ToLowerInvariant());
 
-        var ingredientIds = _context.Ingredients.Where(i => ingredients.Contains(i.Name)).Select(i => i.Id).ToArray();
+        var ingredientIds = _context.Ingredients.Where(i => ingredients.Contains(i.Name)).Select(i => i.Id).ToList();
 
-        var recipeIds = _context.Ingredient2Recipes.Where(i2R => ingredientIds.Contains(i2R.IngredientId))
-            .Select(l => l.RecipeId).Distinct();
+        var recipeLinkGroups = _context.Ingredient2Recipes
+            .Where(i => ingredientIds.Contains(i.IngredientId))
+            .GroupBy(i => i.RecipeId)
+            .ToList();
 
-        var recipes = _context.RecipesDatasets.Where(r => recipeIds.Contains(r.Id));
+        var recipeIds = recipeLinkGroups.Where(g => ingredientIds.All(x => g.Any(tt => tt.IngredientId == x)))
+            .SelectMany(rid => rid.Select(i => i.RecipeId))
+            .AsEnumerable()
+            .Distinct();
+        
+        var recipes = _context.RecipesDatasets.Where(r => recipeIds.Contains(r.Id)).ToList();
 
         message.ProcessingArgs = [];
 
