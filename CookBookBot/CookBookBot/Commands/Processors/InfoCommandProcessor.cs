@@ -15,13 +15,13 @@ public class InfoCommandProcessor<TReplyMarkup> : CommandProcessor<InfoCommand> 
     private readonly SendOptionsBuilder<TReplyMarkup>? _options;
 
     public InfoCommandProcessor(ILogger<InfoCommandProcessor<TReplyMarkup>> logger,
-                                ICommandValidator<InfoCommand> commandValidator,
-                                ILayoutSupplier<TReplyMarkup> layoutSupplier,
-                                ILayoutParser layoutParser,
-                                IValidator<Message> messageValidator)
-            : base(logger,
-                   commandValidator,
-                   messageValidator)
+        ICommandValidator<InfoCommand> commandValidator,
+        ILayoutSupplier<TReplyMarkup> layoutSupplier,
+        ILayoutParser layoutParser,
+        IValidator<Message> messageValidator)
+        : base(logger,
+            commandValidator,
+            messageValidator)
     {
         var location = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
         var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "start_layout.json"));
@@ -31,15 +31,15 @@ public class InfoCommandProcessor<TReplyMarkup> : CommandProcessor<InfoCommand> 
     }
 
     public InfoCommandProcessor(ILogger<InfoCommandProcessor<TReplyMarkup>> logger,
-                                ICommandValidator<InfoCommand> commandValidator,
-                                ILayoutSupplier<TReplyMarkup> layoutSupplier,
-                                ILayoutParser layoutParser,
-                                IValidator<Message> messageValidator,
-                                MetricsProcessor? metricsProcessor)
-            : base(logger,
-                   commandValidator,
-                   messageValidator,
-                   metricsProcessor)
+        ICommandValidator<InfoCommand> commandValidator,
+        ILayoutSupplier<TReplyMarkup> layoutSupplier,
+        ILayoutParser layoutParser,
+        IValidator<Message> messageValidator,
+        MetricsProcessor? metricsProcessor)
+        : base(logger,
+            commandValidator,
+            messageValidator,
+            metricsProcessor)
     {
         var location = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
         var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "start_layout.json"));
@@ -71,7 +71,8 @@ public class InfoCommandProcessor<TReplyMarkup> : CommandProcessor<InfoCommand> 
             {
                 Uid = Guid.NewGuid().ToString(),
                 ChatIds = message.ChatIds,
-                Body = "This is a test bot.\nEnjoy!"
+                Body =
+                    "Discover delicious recipes at your fingertips! Simply type in your favorite ingredients or dish names, and our bot will provide you with a variety of recipes tailored to your preferences. Whether you're looking for quick meals, healthy options, or gourmet dishes, the Recipe Assistant is here to inspire your culinary adventures. Start cooking today! Enjoy!\nBased on BotticelliBots: http://botticellibots.com"
             }
         };
 
