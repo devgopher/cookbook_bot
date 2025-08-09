@@ -1,18 +1,25 @@
-﻿using System.Text;
+﻿using System.Reflection;
+using System.Text;
 using Botticelli.Client.Analytics;
+using Botticelli.Controls.Parsers;
 using Botticelli.Framework.Commands.Processors;
 using Botticelli.Framework.Commands.Validators;
+using Botticelli.Framework.SendOptions;
+using Botticelli.Shared.API.Client.Requests;
 using Botticelli.Shared.ValueObjects;
 using CookBookBot.Dal;
 using FluentValidation;
 
 namespace CookBookBot.Commands.Processors;
 
-public class GetRecipeCommandProcessor : CommandChainProcessor<FindRecipeCommand>
+public class GetRecipeCommandProcessor<TReplyMarkup> : CommandChainProcessor<FindRecipeCommand> where TReplyMarkup : class
 {
     private readonly CookBookDbContext _context;
-
+    private readonly SendOptionsBuilder<TReplyMarkup>? _options;
+    
     public GetRecipeCommandProcessor(ILogger<CommandChainProcessor<FindRecipeCommand>> logger,
+        ILayoutSupplier<TReplyMarkup> layoutSupplier,
+        ILayoutParser layoutParser,
         ICommandValidator<FindRecipeCommand> commandValidator,
         MetricsProcessor metricsProcessor,
         IValidator<Message> messageValidator, CookBookDbContext context) : base(logger,
@@ -21,6 +28,8 @@ public class GetRecipeCommandProcessor : CommandChainProcessor<FindRecipeCommand
         messageValidator)
     {
         _context = context;
+        var responseMarkup = Init(layoutSupplier, layoutParser);
+        _options = SendOptionsBuilder<TReplyMarkup>.CreateBuilder(responseMarkup);
     }
 
     public override async Task ProcessAsync(Message message, CancellationToken token)
@@ -50,7 +59,12 @@ public class GetRecipeCommandProcessor : CommandChainProcessor<FindRecipeCommand
         {
             message.Body = "🚫 No recipes were found!";
             
-            await SendMessage(message, token);
+            var messageRequest = new SendMessageRequest
+            {
+                Message = message
+            };
+            
+            await SendMessage(messageRequest, _options, token);
         }
         
         foreach (var recipe in recipes.AsEnumerable().OrderBy(o => Random.Shared.Next()).Take(3))
@@ -66,9 +80,26 @@ public class GetRecipeCommandProcessor : CommandChainProcessor<FindRecipeCommand
             sb.Append($"\n{recipe.Link}\n\n");
             message.Body = sb.ToString();
         
-            await SendMessage(message, token);
+            var messageRequest = new SendMessageRequest
+            {
+                Message = message
+            };
+            
+            await SendMessage(messageRequest, _options, token);
+
+            await Task.Delay(2000, token);
         }
     }
+    
+    private static TReplyMarkup Init(ILayoutSupplier<TReplyMarkup> layoutSupplier, ILayoutParser layoutParser)
+    {
+        var location = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
+        var responseLayout = layoutParser.ParseFromFile(Path.Combine(location, "start_layout.json"));
+        var responseMarkup = layoutSupplier.GetMarkup(responseLayout);
 
+        return responseMarkup;
+    }
+    
+    
     protected override Task InnerProcess(Message message, CancellationToken token) => Task.FromResult(Task.CompletedTask);
 }

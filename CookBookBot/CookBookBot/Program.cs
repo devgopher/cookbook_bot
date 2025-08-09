@@ -1,5 +1,4 @@
-﻿using Botticelli.Client.Analytics.Extensions;
-using Botticelli.Controls.Parsers;
+﻿using Botticelli.Controls.Parsers;
 using Botticelli.Framework.Commands.Validators;
 using Botticelli.Framework.Extensions;
 using Botticelli.Framework.Telegram;
@@ -14,7 +13,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var bot = builder.Services
+builder.Services
        .AddTelegramBot(builder.Configuration)
        .Prepare();
 
@@ -50,7 +49,7 @@ builder.Services.AddBotCommand<StopCommand>()
 
 builder.Services.AddBotChainProcessedCommand<FindRecipeCommand, PassValidator<FindRecipeCommand>>()
        .AddNext<FindRecipeCommandProcessor>()
-       .AddNext<GetRecipeCommandProcessor>();
+       .AddNext<GetRecipeCommandProcessor<ReplyKeyboardMarkup>>();
 
 var app = builder.Build();
 app.Services.RegisterBotChainedCommand<FindRecipeCommand, TelegramBot>()
